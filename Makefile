@@ -32,6 +32,7 @@ install:
 	python3 -m venv $(VENV)
 	$(PIP) install --upgrade pip
 	$(PIP) install -r requirements.txt -r requirements-dev.txt
+	$(PIP) install -e .
 
 run:
 	$(UVICORN) app.main:app --host 0.0.0.0 --port 8000

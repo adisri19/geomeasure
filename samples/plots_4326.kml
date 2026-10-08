@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Maharashtra Agricultural Survey</name>
+    <Folder>
+      <name>Parcels</name>
+      <Placemark id="plot_nashik_01">
+        <name>Nashik Vineyard Estate</name>
+        <description>Prime vineyard parcel near Nashik, Maharashtra</description>
+        <ExtendedData>
+          <Data name="crop"><value>Grapes</value></Data>
+          <Data name="soil_type"><value>Black Cotton</value></Data>
+          <Data name="irrigation"><value>Drip</value></Data>
+        </ExtendedData>
+        <Polygon>
+          <outerBoundaryIs>
+            <LinearRing>
+              <coordinates>
+                73.7800,19.9900,0
+                73.8000,19.9900,0
+                73.8000,20.0100,0
+                73.7800,20.0100,0
+                73.7800,19.9900,0
+              </coordinates>
+            </LinearRing>
+          </outerBoundaryIs>
+          <innerBoundaryIs>
+            <LinearRing>
+              <coordinates>
+                73.7850,19.9950,0
+                73.7950,19.9950,0
+                73.7950,20.0050,0
+                73.7850,20.0050,0
+                73.7850,19.9950,0
+              </coordinates>
+            </LinearRing>
+          </innerBoundaryIs>
+        </Polygon>
+      </Placemark>
+      <Placemark id="plot_london_02">
+        <name>Greenwich Park (Zone 30N Test)</name>
+        <description>Polygon in London demonstrating international UTM Zone 30N</description>
+        <ExtendedData>
+          <Data name="zone"><value>UTM 30N</value></Data>
+        </ExtendedData>
+        <Polygon>
+          <outerBoundaryIs>
+            <LinearRing>
+              <coordinates>
+                -0.0100,51.4700,0
+                0.0100,51.4700,0
+                0.0100,51.4900,0
+                -0.0100,51.4900,0
+                -0.0100,51.4700,0
+              </coordinates>
+            </LinearRing>
+          </outerBoundaryIs>
+        </Polygon>
+      </Placemark>
+      <Placemark id="empty_plot_03">
+        <name>Unsurveyed Plot (Empty Geometry)</name>
+        <description>Demonstrates graceful handling of empty geometry</description>
+      </Placemark>
+    </Folder>
+    <Folder>
+      <name>Infrastructure</name>
+      <Placemark id="canal_01">
+        <name>Godavari Irrigation Canal</name>
+        <description>Main distribution canal line</description>
+        <ExtendedData>
+          <Data name="capacity_cusecs"><value>450</value></Data>
+        </ExtendedData>
+        <LineString>
+          <coordinates>
+            73.7500,19.9800,0
+            73.7700,19.9850,0
+            73.7900,20.0000,0
+            73.8200,20.0150,0
+          </coordinates>
+        </LineString>
+      </Placemark>
+      <Placemark id="substation_01">
+        <name>Nashik Grid Substation</name>
+        <description>Electrical substation point</description>
+        <Point>
+          <coordinates>73.7850,19.9920,0</coordinates>
+        </Point>
+      </Placemark>
+    </Folder>
+  </Document>
+</kml>

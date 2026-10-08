@@ -1,0 +1,1506 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Geospatial File Measurement API",
+    "description": "Production-grade backend service accepting Shapefile (.zip) and KML (.kml) geospatial files, normalizing geometry features, projecting geographic coordinates to metric projected CRSs, and calculating high-precision area and length measurements with geodesic cross-validation.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/files/": {
+      "post": {
+        "tags": [
+          "Files & Measurements"
+        ],
+        "summary": "Upload and Process Geospatial File",
+        "description": "Upload a Shapefile archive (.zip) or KML document (.kml) for validation, projection, and measurement.",
+        "operationId": "upload_file_api_files__post",
+        "parameters": [
+          {
+            "name": "async",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Execute processing asynchronously",
+              "default": false,
+              "title": "Async"
+            },
+            "description": "Execute processing asynchronously"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_file_api_files__post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "File uploaded and processed synchronously",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileInfo"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "File uploaded and scheduled for asynchronous background processing (?async=true)"
+          },
+          "400": {
+            "description": "Empty file uploaded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Upload size exceeds permitted limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported media type or format mismatch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid archive, missing shapefile components, malformed XML, or undefined CRS",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Files & Measurements"
+        ],
+        "summary": "List Uploaded Files",
+        "description": "Retrieve a paginated list of uploaded files with optional status filtering.",
+        "operationId": "list_files_api_files__get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "description": "Items per page",
+              "default": 100,
+              "title": "Limit"
+            },
+            "description": "Items per page"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Pagination offset",
+              "default": 0,
+              "title": "Offset"
+            },
+            "description": "Pagination offset"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by status (COMPLETED, PENDING, FAILED)",
+              "title": "Status"
+            },
+            "description": "Filter by status (COMPLETED, PENDING, FAILED)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/files/{file_id}/": {
+      "get": {
+        "tags": [
+          "Files & Measurements"
+        ],
+        "summary": "Get File Information",
+        "description": "Retrieve file processing status, metadata, counts, and CRS information.",
+        "operationId": "get_file_info_api_files__file_id___get",
+        "parameters": [
+          {
+            "name": "file_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Unique file ID",
+              "title": "File Id"
+            },
+            "description": "Unique file ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File metadata retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileInfo"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Files & Measurements"
+        ],
+        "summary": "Delete File and Measurements",
+        "description": "Delete an uploaded file record and all its associated features.",
+        "operationId": "delete_file_api_files__file_id___delete",
+        "parameters": [
+          {
+            "name": "file_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Unique file ID",
+              "title": "File Id"
+            },
+            "description": "Unique file ID"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "File and features deleted successfully"
+          },
+          "404": {
+            "description": "File not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/files/{file_id}/measurements/": {
+      "get": {
+        "tags": [
+          "Files & Measurements"
+        ],
+        "summary": "Get Feature Measurements",
+        "description": "Retrieve calculated area and length measurements, derived units, summary statistics, and features.",
+        "operationId": "get_measurements_api_files__file_id__measurements__get",
+        "parameters": [
+          {
+            "name": "file_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Unique file ID",
+              "title": "File Id"
+            },
+            "description": "Unique file ID"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "description": "Features per page",
+              "default": 100,
+              "title": "Limit"
+            },
+            "description": "Features per page"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Features offset",
+              "default": 0,
+              "title": "Offset"
+            },
+            "description": "Features offset"
+          },
+          {
+            "name": "geometry_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter features by geometry type (e.g. Polygon, LineString)",
+              "title": "Geometry Type"
+            },
+            "description": "Filter features by geometry type (e.g. Polygon, LineString)"
+          },
+          {
+            "name": "include_geometry",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Whether to include full GeoJSON geometry objects",
+              "default": true,
+              "title": "Include Geometry"
+            },
+            "description": "Whether to include full GeoJSON geometry objects"
+          },
+          {
+            "name": "precision",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 10,
+              "minimum": 0,
+              "description": "Decimal precision for displayed numeric units",
+              "default": 4,
+              "title": "Precision"
+            },
+            "description": "Decimal precision for displayed numeric units"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Measurements and summary retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeasurementsResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "File is still PENDING or PROCESSING",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "File processing FAILED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/files/{file_id}/features/{feature_index}/": {
+      "get": {
+        "tags": [
+          "Files & Measurements"
+        ],
+        "summary": "Get Single Feature Measurement",
+        "description": "Retrieve measurement details for an individual feature by index.",
+        "operationId": "get_single_feature_api_files__file_id__features__feature_index___get",
+        "parameters": [
+          {
+            "name": "file_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Unique file ID",
+              "title": "File Id"
+            },
+            "description": "Unique file ID"
+          },
+          {
+            "name": "feature_index",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "0-based feature index",
+              "title": "Feature Index"
+            },
+            "description": "0-based feature index"
+          },
+          {
+            "name": "precision",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 10,
+              "minimum": 0,
+              "default": 4,
+              "title": "Precision"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Feature retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeatureItem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File or feature not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/health": {
+      "get": {
+        "tags": [
+          "Health & Monitoring"
+        ],
+        "summary": "Liveness Probe",
+        "description": "Returns 200 OK if service process is running and responding.",
+        "operationId": "health_check_api_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Health Check Api Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ready": {
+      "get": {
+        "tags": [
+          "Health & Monitoring"
+        ],
+        "summary": "Readiness Probe",
+        "description": "Validates that database connection is alive and necessary GDAL drivers are available.",
+        "operationId": "readiness_check_api_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "Health & Monitoring"
+        ],
+        "summary": "Liveness Probe",
+        "description": "Returns 200 OK if service process is running and responding.",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Health Check Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ready": {
+      "get": {
+        "tags": [
+          "Health & Monitoring"
+        ],
+        "summary": "Readiness Probe",
+        "description": "Validates that database connection is alive and necessary GDAL drivers are available.",
+        "operationId": "readiness_check_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Body_upload_file_api_files__post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "Geospatial file (.zip Shapefile or .kml)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_file_api_files__post"
+      },
+      "ErrorDetail": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code",
+            "description": "Machine-readable domain error code",
+            "examples": [
+              "UNSUPPORTED_FILE_TYPE"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Human-readable description of the error",
+            "examples": [
+              "Unsupported file type"
+            ]
+          },
+          "details": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Details",
+            "description": "Contextual parameters or validation fields"
+          },
+          "request_id": {
+            "type": "string",
+            "title": "Request Id",
+            "description": "Traceability request identifier",
+            "examples": [
+              "req-7b8d4c9a"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "request_id"
+        ],
+        "title": "ErrorDetail",
+        "description": "Encapsulated error details."
+      },
+      "ErrorResponse": {
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorDetail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "title": "ErrorResponse",
+        "description": "Standardized top-level API error envelope."
+      },
+      "FeatureItem": {
+        "properties": {
+          "feature_index": {
+            "type": "integer",
+            "title": "Feature Index",
+            "description": "0-based sequence index within file",
+            "examples": [
+              0
+            ]
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id",
+            "description": "Original source FID if available",
+            "examples": [
+              "FID_101"
+            ]
+          },
+          "layer_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Layer Name",
+            "description": "Originating layer or folder name",
+            "examples": [
+              "parcels"
+            ]
+          },
+          "geometry_type": {
+            "type": "string",
+            "title": "Geometry Type",
+            "description": "OGC geometry type",
+            "examples": [
+              "Polygon"
+            ]
+          },
+          "crs": {
+            "type": "string",
+            "title": "Crs",
+            "description": "Feature coordinate reference system",
+            "examples": [
+              "EPSG:4326"
+            ]
+          },
+          "geometry": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Geometry",
+            "description": "GeoJSON geometry object in source CRS (optional based on include_geometry)"
+          },
+          "properties": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Properties",
+            "description": "Feature attributes and metadata"
+          },
+          "measurement": {
+            "$ref": "#/components/schemas/MeasurementDetail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "feature_index",
+          "geometry_type",
+          "crs",
+          "measurement"
+        ],
+        "title": "FeatureItem",
+        "description": "Normalized feature record with geometry, properties, and measurements."
+      },
+      "FileInfo": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Unique file identifier",
+            "examples": [
+              "abc123"
+            ]
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename",
+            "description": "Sanitized original filename",
+            "examples": [
+              "survey.kml"
+            ]
+          },
+          "feature_count": {
+            "type": "integer",
+            "title": "Feature Count",
+            "description": "Total count of features in the file",
+            "examples": [
+              120
+            ]
+          },
+          "crs": {
+            "type": "string",
+            "title": "Crs",
+            "description": "Coordinate Reference System identifier",
+            "examples": [
+              "EPSG:4326"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Processing lifecycle state",
+            "examples": [
+              "COMPLETED"
+            ]
+          },
+          "file_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Type",
+            "description": "SHAPEFILE or KML",
+            "examples": [
+              "KML"
+            ]
+          },
+          "size_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size Bytes",
+            "description": "Size of file in bytes",
+            "examples": [
+              1048576
+            ]
+          },
+          "sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sha256",
+            "description": "SHA256 digest of original uploaded bytes"
+          },
+          "geometry_type_counts": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "integer"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Geometry Type Counts",
+            "description": "Feature counts grouped by geometry type",
+            "examples": [
+              {
+                "LineString": 30,
+                "Point": 10,
+                "Polygon": 80
+              }
+            ]
+          },
+          "crs_assumed": {
+            "type": "boolean",
+            "title": "Crs Assumed",
+            "description": "Whether CRS was assumed via coordinate bounds heuristic",
+            "default": false
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings",
+            "description": "Non-fatal warnings recorded during processing"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error",
+            "description": "Error message if processing FAILED"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At",
+            "description": "Upload timestamp"
+          },
+          "processed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Processed At",
+            "description": "Processing completion timestamp"
+          },
+          "processing_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Processing Ms",
+            "description": "Elapsed processing duration in milliseconds"
+          },
+          "links": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FileLinks"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Related endpoint hyperlinks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "filename",
+          "feature_count",
+          "crs",
+          "status"
+        ],
+        "title": "FileInfo",
+        "description": "File information schema.\n\nContains all mandatory fields verbatim from the evaluation specification:\n- id\n- filename\n- feature_count\n- crs\n- status\nPlus supplemental operational metadata."
+      },
+      "FileLinks": {
+        "properties": {
+          "self": {
+            "type": "string",
+            "title": "Self",
+            "description": "URL to retrieve file metadata"
+          },
+          "measurements": {
+            "type": "string",
+            "title": "Measurements",
+            "description": "URL to retrieve feature measurements"
+          }
+        },
+        "type": "object",
+        "required": [
+          "self",
+          "measurements"
+        ],
+        "title": "FileLinks",
+        "description": "HATEOAS navigational links."
+      },
+      "FileListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/FileInfo"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Total number of uploaded files matching criteria"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit",
+            "description": "Pagination limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset",
+            "description": "Pagination offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "FileListResponse",
+        "description": "Paginated collection of uploaded files."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "MeasurementDetail": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "description": "Measurement classification: area | length | none",
+            "examples": [
+              "area"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Calculation status: OK | NOT_REQUIRED | SKIPPED_* | ERROR",
+            "examples": [
+              "OK"
+            ]
+          },
+          "area_m2": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Area M2",
+            "description": "Calculated area in square meters",
+            "examples": [
+              12345.67
+            ]
+          },
+          "area_hectares": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Area Hectares",
+            "description": "Derived area in hectares (ha)",
+            "examples": [
+              1.2346
+            ]
+          },
+          "area_acres": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Area Acres",
+            "description": "Derived area in international acres",
+            "examples": [
+              3.0506
+            ]
+          },
+          "area_sq_km": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Area Sq Km",
+            "description": "Derived area in square kilometers",
+            "examples": [
+              0.0123
+            ]
+          },
+          "perimeter_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Perimeter M",
+            "description": "Perimeter boundary in meters",
+            "examples": [
+              456.7
+            ]
+          },
+          "length_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Length M",
+            "description": "Calculated line length in meters",
+            "examples": [
+              1450.2
+            ]
+          },
+          "length_km": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Length Km",
+            "description": "Derived length in kilometers",
+            "examples": [
+              1.4502
+            ]
+          },
+          "length_miles": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Length Miles",
+            "description": "Derived length in statute miles",
+            "examples": [
+              0.9011
+            ]
+          },
+          "geodesic_area_m2": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Geodesic Area M2",
+            "description": "Ellipsoidal geodesic area verification value (WGS84)"
+          },
+          "geodesic_length_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Geodesic Length M",
+            "description": "Ellipsoidal geodesic length verification value (WGS84)"
+          },
+          "method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method",
+            "description": "Projection strategy applied",
+            "examples": [
+              "UTM Zone 43N (EPSG:32643)"
+            ]
+          },
+          "projected_crs": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Projected Crs",
+            "description": "Projected CRS code or proj4 string",
+            "examples": [
+              "EPSG:32643"
+            ]
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note",
+            "description": "Informational or repair audit notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "status"
+        ],
+        "title": "MeasurementDetail",
+        "description": "Detailed measurement results and auditable method metadata for a feature."
+      },
+      "MeasurementsResponse": {
+        "properties": {
+          "file_id": {
+            "type": "string",
+            "title": "File Id",
+            "examples": [
+              "abc123"
+            ]
+          },
+          "crs": {
+            "type": "string",
+            "title": "Crs",
+            "examples": [
+              "EPSG:4326"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "examples": [
+              "COMPLETED"
+            ]
+          },
+          "summary": {
+            "$ref": "#/components/schemas/MeasurementsSummary"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          },
+          "features": {
+            "items": {
+              "$ref": "#/components/schemas/FeatureItem"
+            },
+            "type": "array",
+            "title": "Features"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file_id",
+          "crs",
+          "status",
+          "summary",
+          "pagination",
+          "features"
+        ],
+        "title": "MeasurementsResponse",
+        "description": "Complete measurement response schema matching evaluation contract."
+      },
+      "MeasurementsSummary": {
+        "properties": {
+          "feature_count": {
+            "type": "integer",
+            "title": "Feature Count",
+            "description": "Total feature count in file",
+            "examples": [
+              120
+            ]
+          },
+          "measured_count": {
+            "type": "integer",
+            "title": "Measured Count",
+            "description": "Count of successfully measured features",
+            "examples": [
+              110
+            ]
+          },
+          "skipped_count": {
+            "type": "integer",
+            "title": "Skipped Count",
+            "description": "Count of non-measured or skipped features",
+            "examples": [
+              10
+            ]
+          },
+          "total_area": {
+            "$ref": "#/components/schemas/SummaryArea"
+          },
+          "total_length": {
+            "$ref": "#/components/schemas/SummaryLength"
+          },
+          "geometry_type_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Geometry Type Counts",
+            "description": "Histogram of geometry types",
+            "examples": [
+              {
+                "LineString": 30,
+                "Point": 10,
+                "Polygon": 80
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "feature_count",
+          "measured_count",
+          "skipped_count",
+          "total_area",
+          "total_length",
+          "geometry_type_counts"
+        ],
+        "title": "MeasurementsSummary",
+        "description": "Cumulative summary totals across features in the file."
+      },
+      "PaginationMeta": {
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "title": "Limit",
+            "examples": [
+              100
+            ]
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset",
+            "examples": [
+              0
+            ]
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "examples": [
+              120
+            ]
+          },
+          "next": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next",
+            "examples": [
+              "/api/files/abc123/measurements/?limit=100&offset=100"
+            ]
+          },
+          "previous": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous",
+            "examples": [
+              null
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "limit",
+          "offset",
+          "total"
+        ],
+        "title": "PaginationMeta",
+        "description": "Pagination metadata with navigational links."
+      },
+      "SummaryArea": {
+        "properties": {
+          "square_meters": {
+            "type": "number",
+            "title": "Square Meters",
+            "examples": [
+              1234567.89
+            ]
+          },
+          "hectares": {
+            "type": "number",
+            "title": "Hectares",
+            "examples": [
+              123.4568
+            ]
+          },
+          "square_kilometers": {
+            "type": "number",
+            "title": "Square Kilometers",
+            "examples": [
+              1.2346
+            ]
+          },
+          "acres": {
+            "type": "number",
+            "title": "Acres",
+            "examples": [
+              305.068
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "square_meters",
+          "hectares",
+          "square_kilometers",
+          "acres"
+        ],
+        "title": "SummaryArea",
+        "description": "Aggregated area metrics across all measured features."
+      },
+      "SummaryLength": {
+        "properties": {
+          "meters": {
+            "type": "number",
+            "title": "Meters",
+            "examples": [
+              45678.9
+            ]
+          },
+          "kilometers": {
+            "type": "number",
+            "title": "Kilometers",
+            "examples": [
+              45.6789
+            ]
+          },
+          "miles": {
+            "type": "number",
+            "title": "Miles",
+            "examples": [
+              28.3835
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "meters",
+          "kilometers",
+          "miles"
+        ],
+        "title": "SummaryLength",
+        "description": "Aggregated length metrics across all measured features."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 320" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#1e293b" />
+    </linearGradient>
+    <linearGradient id="cardGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#334155" />
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000" flood-opacity="0.3" />
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="320" rx="16" fill="url(#bgGrad)" />
+
+  <!-- Title & Subtitle -->
+  <text x="450" y="40" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="20" font-weight="700" fill="#f8fafc" text-anchor="middle">Geospatial File Measurement API Pipeline</text>
+  <text x="450" y="62" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#94a3b8" text-anchor="middle">High-Precision Ingestion, Dynamic Metric Projection, and Geodesic Verification</text>
+
+  <!-- Card 1: Ingestion & Security -->
+  <g filter="url(#shadow)">
+    <rect x="40" y="90" width="180" height="180" rx="12" fill="url(#cardGrad1)" stroke="#475569" stroke-width="1.5" />
+    <rect x="40" y="90" width="180" height="6" rx="3" fill="#38bdf8" />
+    <text x="130" y="125" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="14" font-weight="600" fill="#38bdf8" text-anchor="middle">1. Safe Ingestion</text>
+    <text x="60" y="155" font-family="monospace" font-size="11" fill="#cbd5e1">• Stream 64KB chunks</text>
+    <text x="60" y="175" font-family="monospace" font-size="11" fill="#cbd5e1">• Zip-Slip Defenses</text>
+    <text x="60" y="195" font-family="monospace" font-size="11" fill="#cbd5e1">• Zip-Bomb Limits</text>
+    <text x="60" y="215" font-family="monospace" font-size="11" fill="#cbd5e1">• defusedxml XXE Guard</text>
+    <text x="60" y="235" font-family="monospace" font-size="11" fill="#cbd5e1">• Magic Byte Sniffer</text>
+  </g>
+
+  <!-- Arrow 1 -->
+  <path d="M 230 180 L 255 180" stroke="#38bdf8" stroke-width="2.5" marker-end="url(#arrow)" stroke-dasharray="4,4" />
+  <polygon points="255,180 247,175 247,185" fill="#38bdf8" />
+
+  <!-- Card 2: Parsers -->
+  <g filter="url(#shadow)">
+    <rect x="260" y="90" width="180" height="180" rx="12" fill="url(#cardGrad1)" stroke="#475569" stroke-width="1.5" />
+    <rect x="260" y="90" width="180" height="6" rx="3" fill="#818cf8" />
+    <text x="350" y="125" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="14" font-weight="600" fill="#818cf8" text-anchor="middle">2. Reader Strategy</text>
+    <text x="280" y="155" font-family="monospace" font-size="11" fill="#cbd5e1">• Shapefile (pyogrio)</text>
+    <text x="280" y="175" font-family="monospace" font-size="11" fill="#cbd5e1">• KML Placemarks</text>
+    <text x="280" y="195" font-family="monospace" font-size="11" fill="#cbd5e1">• Multi-Layer Support</text>
+    <text x="280" y="215" font-family="monospace" font-size="11" fill="#cbd5e1">• Polygon Holes (inner)</text>
+    <text x="280" y="235" font-family="monospace" font-size="11" fill="#cbd5e1">• make_valid Repair</text>
+  </g>
+
+  <!-- Arrow 2 -->
+  <path d="M 450 180 L 475 180" stroke="#818cf8" stroke-width="2.5" stroke-dasharray="4,4" />
+  <polygon points="475,180 467,175 467,185" fill="#818cf8" />
+
+  <!-- Card 3: CRS Projection -->
+  <g filter="url(#shadow)">
+    <rect x="480" y="90" width="180" height="180" rx="12" fill="url(#cardGrad1)" stroke="#475569" stroke-width="1.5" />
+    <rect x="480" y="90" width="180" height="6" rx="3" fill="#34d399" />
+    <text x="570" y="125" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="14" font-weight="600" fill="#34d399" text-anchor="middle">3. CRS &amp; Projection</text>
+    <text x="500" y="155" font-family="monospace" font-size="11" fill="#cbd5e1">• Centroid UTM (1-60)</text>
+    <text x="500" y="175" font-family="monospace" font-size="11" fill="#cbd5e1">• Norway &amp; Svalbard</text>
+    <text x="500" y="195" font-family="monospace" font-size="11" fill="#cbd5e1">• Polar UPS Fallback</text>
+    <text x="500" y="215" font-family="monospace" font-size="11" fill="#cbd5e1">• Custom LAEA (&gt;6°)</text>
+    <text x="500" y="235" font-family="monospace" font-size="11" fill="#cbd5e1">• WebMerc Reroute</text>
+  </g>
+
+  <!-- Arrow 3 -->
+  <path d="M 670 180 L 695 180" stroke="#34d399" stroke-width="2.5" stroke-dasharray="4,4" />
+  <polygon points="695,180 687,175 687,185" fill="#34d399" />
+
+  <!-- Card 4: Measurement & DB -->
+  <g filter="url(#shadow)">
+    <rect x="700" y="90" width="160" height="180" rx="12" fill="url(#cardGrad1)" stroke="#475569" stroke-width="1.5" />
+    <rect x="700" y="90" width="160" height="6" rx="3" fill="#f472b6" />
+    <text x="780" y="125" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="14" font-weight="600" fill="#f472b6" text-anchor="middle">4. Metrics &amp; Persistence</text>
+    <text x="715" y="155" font-family="monospace" font-size="11" fill="#cbd5e1">• Planar Area/Len</text>
+    <text x="715" y="175" font-family="monospace" font-size="11" fill="#cbd5e1">• Geod WGS84 Audit</text>
+    <text x="715" y="195" font-family="monospace" font-size="11" fill="#cbd5e1">• Unit Factor (ft/m)</text>
+    <text x="715" y="215" font-family="monospace" font-size="11" fill="#cbd5e1">• Batch Insert</text>
+    <text x="715" y="235" font-family="monospace" font-size="11" fill="#cbd5e1">• 11,800+ feat/s</text>
+  </g>
+</svg>

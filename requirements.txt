@@ -1,0 +1,11 @@
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+pydantic>=2.9.0
+pydantic-settings>=2.6.0
+sqlalchemy>=2.0.36
+alembic>=1.13.3
+python-multipart>=0.0.12
+pyogrio>=0.10.0
+shapely>=2.0.6
+pyproj>=3.7.0
+defusedxml>=0.7.1

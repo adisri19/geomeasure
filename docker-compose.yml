@@ -1,0 +1,31 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: geomeasure:latest
+    container_name: geomeasure-api
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite:////app/data/geomeasure.db
+      - UPLOAD_DIR=/app/uploads
+      - LOG_LEVEL=INFO
+      - APP_ENV=production
+      - CORS_ORIGINS=*
+    volumes:
+      - geodata:/app/data
+      - geouploads:/app/uploads
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  geodata:
+    driver: local
+  geouploads:
+    driver: local

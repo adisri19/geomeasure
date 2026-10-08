@@ -1,0 +1,87 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libgdal-dev gdal-bin libgeos-dev libproj-dev
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Code Quality & Formatting (Ruff)
+        run: |
+          ruff check app tests scripts
+          ruff format --check app tests scripts
+
+      - name: Static Type Checking (Mypy)
+        run: |
+          mypy app scripts
+
+      - name: Run Test Suite with Coverage
+        run: |
+          pytest tests/ --cov=app --cov-report=term-missing --cov-report=xml --cov-fail-under=90
+
+      - name: Upload Coverage Artifact
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Container Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          load: true
+          tags: geomeasure:latest
+
+      - name: Smoke Test Container Health
+        run: |
+          docker run -d --name geomeasure-api -p 8000:8000 geomeasure:latest
+          sleep 5
+          for i in {1..10}; do
+            if curl -s http://localhost:8000/health | grep -q "healthy"; then
+              echo "Container health probe passed!"
+              docker stop geomeasure-api
+              exit 0
+            fi
+            echo "Waiting for container health... ($i/10)"
+            sleep 2
+          done
+          echo "Health probe timed out"
+          docker logs geomeasure-api
+          exit 1
